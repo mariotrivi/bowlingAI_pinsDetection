@@ -1,5 +1,6 @@
 # Debugging folders
 debug_images/
+uploaded_files/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
