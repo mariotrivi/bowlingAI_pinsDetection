@@ -44,6 +44,9 @@ WORKDIR /wd
 
 RUN apt-get update && apt-get install -y curl
 
+# Copy files, not necessary if mount volume 
+COPY api_launcher.py /wd/
+
 # Set permissions
 RUN chmod -R 777 /wd
 
@@ -52,4 +55,8 @@ RUN useradd -m -s /bin/bash -N -u 1000 jovyan
 
 # Switch to this user
 USER jovyan
+
+CMD ["python3", "/wd/api_launcher.py"]
+
+
 
