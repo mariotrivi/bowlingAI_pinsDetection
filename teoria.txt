@@ -1,0 +1,28 @@
+Apartado2:
+
+El codigo del repo ya está pensado para inferir sobre clases no pre-existentes en COCO, en este caso está pensado para detectar y segmentar bolo, bola y barrera. 
+La base del desarrollo es el modelo Yolov8 (Ultralitics github), elegido por lo facil y rápido que se puede fine-tunear un modelo para la taréa de detección y o segmentacion de las instancias deseadas.
+Posibles problemas: overfiting, falta de datos, falta de espacio en GPU (reducción de batch o tamaño imgs), falta de HW adecuado,...
+
+* paso 1: El primer paso es conseguir un dataset etiquetado para la tarea que busques, segmentación en este caso, por lo que necesitas las mácaras en formato yolov8-seg, que es como el de las bboxes pero con poligonos de segmentación además de las cajas propias de la tarea de detección. Para esta aplicación se ha obtenido un dataset de una fuente pública, en roboflow, pero existiría la posibilidad de hacerlo de manera manual con cvat o la propia plataforma de roboflow (entre otras opciones). Preparar el dataset en splits train/test/val. link:https://universe.roboflow.com/lsc-kik8c/bowling-pin-detection
+* paso 2: definir los parámetros del entrenamiento (ej: 100 epochs, lr, ...), el modelo a utilizar (yolov8x-seg) dependiendo de la exigencia de tiempo real y de performance. 
+* paso 3: lanzar el entrenamiento y visualizar la correcta evolución
+* paso 4: comprobar en las metrics y las gráficas resultantes que no haya habido overfitting (loss del val parecido al loss del train, mAP no decrece, loss no sube, ...) y que haya aprendido bien con unas mAP y F1 score decentes.
+* paso 5: inferir sobre datos no presentes en el split de train y comprobar que sea coherente con las metrics obtenidas
+
+El entrenamiento se ha realizado partiendo de los pesos de COCO como base, para evitar partir de valores random. De este modo han sido suficientes 2000 imágenes (1000 ampliadas con técnicas de augmentation) para obtener unas buenas métricas. Dependiendo de la dificultad de la tarea puedes esperar mejores o peores métricas, y tambíen de lo que se solapen las caracteristicas visuales de las clases a detectar. Por ejemplo en esta ocasíon, para el modelo de los bolos, se han obtenido metricas de alrededor del 90% en precision, recall y mAP. Son buenos resultados dado el reducido tamaño y la naturaleza del dataset.
+
+- Para mejorar los resultados obtenidos se podría ampliar y limpiar el dataset, etiquetando a mano, con data augmentation, o generando imágenes con generative AI models, como Stable Diffusion o similar. La calidad del dataset lo es todo en este proceso.
+- Se podría ampliar el tamaño de entrada del modelo de 640x640 a 1024x1024, por ejemplo, a costa de una menor velocidad de inferencia y un mayor tiempo de entrenamiento.
+- Se podría aplicar un prepocesado que haga crops de la imagen para aumentar el aspect ratio de los objetos e inferir sobre los batch de crops por separado para despues juntar las predicciones usando NMS (como hace la librería SAHI)
+- Para mejorar los FPS se podría pasar el modelo a ONNX para despues poder correrlo en diversas soluciones de AI acelerada. 
+- En muchas ocasiones, dependiendo de la aplicación a implementar, se puede considerar la utilización de modelos zero-shot open-vocabulary como GroundingDINO + SAM para poder detectar cualquier clase introducida como input por texto en el momento de la inferencia. Esto es más relevante cuando quieres detectar conceptos cambiantes o quieres que tu aplicación tenga un gran espectro de aplicabilidad en lugar de una mejor performance y velocidad para una tarea muy específica.
+
+
+
+Apartado 3 (Opcional):
+
+La solución implementada se adapta muy bien a un procesamiento en el edge, dado que los modelos YOLO son muy rápidos y poco HW demanding. La opción de pasar el modelo a ONNX también permitiría desplegarlo en diferentes dispositivos como TPUs, CPUs o GPUs de forma optimizada. El hecho de que el código este dockerizado ayuda a la facilidad de despliegue e interoperabilidad. Otras opciones, compatibles con ONNX, serían pasar a tensorRT o openvino.
+
+Se podrían utilizar técnicas de destillation learning para "enseñar" a un modelo de menor tamaño utilizando un modelo profesor de mayor tamaño, pero con YOLO no tiene mucho sentido ya que puedes entrenar un modelo de menor tamaño asumiendo un leve descenso en la performance.
+También cabe destacar que los dispositivos edge cada vez tienen más capacidad de computo, por ejemplo el jetson orin AGX 32 GB puede correr sin problemas un yolov8x-seg como el de el ejemplo en 120 ms aprox, sin optimización ni quantization.
