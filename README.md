@@ -4,8 +4,7 @@ Bowling center owners! this code allows you to detect automatically if the red p
 https://www.youtube.com/shorts/-j8adb1jmmI?feature=share
 
 ## how to use it
-Git clone the code in main branch
-CD to the main repo
+Git clone the code in main branch and CD to the main repo
 
 docker build -t api_image:latest .
 
